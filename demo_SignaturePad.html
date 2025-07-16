@@ -1,0 +1,188 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Signature Pad A</title>
+  <style>
+    body {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      font-family: Arial, sans-serif;
+      padding: 10px;
+    }
+    .signature-container {
+      width: 100%;
+      max-width: 600px;
+      margin: 0 auto;
+    }
+    canvas { 
+      border: 1px solid #ccc; 
+      touch-action: none;
+      width: 100%;
+      height: 300px;
+    }
+    .button-row {
+      display: flex;
+      justify-content: space-between;
+      width: 100%;
+      max-width: 600px;
+      margin: 10px 0;
+    }
+    button {
+      padding: 8px 15px;
+      margin: 0 5px;
+    }
+    .options {
+      width: 100%;
+      max-width: 600px;
+      margin-top: 10px;
+      display: flex;
+      align-items: center;
+    }
+    .switch {
+      position: relative;
+      display: inline-block;
+      width: 60px;
+      height: 34px;
+      margin-right: 10px;
+    }
+    .switch input {
+      opacity: 0;
+      width: 0;
+      height: 0;
+    }
+    .slider {
+      position: absolute;
+      cursor: pointer;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background-color: #ccc;
+      transition: .4s;
+      border-radius: 34px;
+    }
+    .slider:before {
+      position: absolute;
+      content: "";
+      height: 26px;
+      width: 26px;
+      left: 4px;
+      bottom: 4px;
+      background-color: white;
+      transition: .4s;
+      border-radius: 50%;
+    }
+    input:checked + .slider {
+      background-color: #2196F3;
+    }
+    input:checked + .slider:before {
+      transform: translateX(26px);
+    }
+  </style>
+</head>
+<body>
+  <div class="signature-container">
+    <canvas id="signature"></canvas>
+  </div>
+  
+  <div class="button-row">
+    <button onclick="resetPad()">Reset</button>
+    <button onclick="saveSignature()">Save</button>
+    <button onclick="savePad()">Save PNG</button>
+  </div>
+
+  <div class="options">
+    <label class="switch">
+      <input type="checkbox" id="useSavedToggle" onchange="toggleSavedSignature()">
+      <span class="slider"></span>
+    </label>
+    <span>Use Saved</span>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/signature_pad@4.0.0/dist/signature_pad.umd.min.js"></script>
+  <script>
+    let canvas = document.getElementById('signature');
+    let signaturePad;
+    let savedSignature = null;
+    
+    // Set canvas size to fit container
+    function resizeCanvas() {
+      const ratio = Math.max(window.devicePixelRatio || 1, 1);
+      canvas.width = canvas.offsetWidth * ratio;
+      canvas.height = canvas.offsetHeight * ratio;
+      canvas.getContext("2d").scale(ratio, ratio);
+      
+      // If SignaturePad is already initialized, clear and reinitialize
+      if (signaturePad) {
+        const data = signaturePad.toData();
+        signaturePad = new SignaturePad(canvas);
+        if (data && data.length) {
+          signaturePad.fromData(data);
+        }
+      } else {
+        signaturePad = new SignaturePad(canvas);
+      }
+    }
+
+    // Initialize
+    window.onload = function() {
+      resizeCanvas();
+    };
+    
+    // Resize canvas when window size changes
+    window.addEventListener('resize', resizeCanvas);
+
+    function resetPad() {
+      signaturePad.clear();
+      document.getElementById('useSavedToggle').checked = false;
+    }
+
+    function saveSignature() {
+      if (signaturePad.isEmpty()) {
+        alert("Please sign before saving");
+        return;
+      }
+      savedSignature = signaturePad.toData();
+      alert("Signature saved");
+    }
+
+    function savePad() {
+      if (signaturePad.isEmpty()) {
+        alert("Please sign first");
+        return;
+      }
+      
+      const dataURL = signaturePad.toDataURL('image/png');
+      
+      // Create download link
+      const link = document.createElement('a');
+      link.href = dataURL;
+      link.download = 'signature.png';
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+    }
+    
+    function toggleSavedSignature() {
+      const toggle = document.getElementById('useSavedToggle');
+      
+      if (toggle.checked) {
+        // Load saved signature
+        if (!savedSignature) {
+          alert("No saved signature available");
+          toggle.checked = false;
+          return;
+        }
+        signaturePad.clear();
+        signaturePad.fromData(savedSignature);
+      } else {
+        // Reset signature pad
+        signaturePad.clear();
+      }
+    }
+  </script>
+</body>
+</html>
